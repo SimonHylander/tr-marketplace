@@ -2,8 +2,8 @@ import { GetStaticProps, type NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 
-import { api } from "y/utils/api";
-import { generateSSGHelper } from "y/utils/ssg";
+import { api } from "~/utils/api";
+import { generateSSGHelper } from "~/utils/ssg";
 
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
@@ -13,6 +13,9 @@ import { useEffect, useState } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { wrap } from "popmotion";
+import Navbar from "~/components/navigation/top-navigation";
+import ProfileDialog from "~/components/profile/profile-dialog";
+import { DialogTrigger } from "~/components/ui/dialog";
 
 export const getStaticProps: GetStaticProps = async (context) => {
   const ssg = generateSSGHelper();
@@ -63,16 +66,17 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
     }
   );
 
-  const { mutate: buyTreddyNoShipping } =
-    api.ad.buyTreddyNoShipping.useMutation({
-      onSuccess: () => {
-        utils.ad.list.invalidate();
-      },
-    });
+  const { mutate: buyWithTreddy } = api.ad.buyWithTreddy.useMutation({
+    onSuccess: (data) => {
+      if (data && data.url) {
+        window.open(data.url, "_blank");
+      }
+    },
+  });
 
-  const buyAsNoShipping = () => {
-    if (!ad || !ad.treddy_deal_id) return;
-    buyTreddyNoShipping({ treddyDealId: ad?.treddy_deal_id });
+  const buyAd = () => {
+    if (!ad || !ad.treddyDealId) return;
+    buyWithTreddy({ treddyDealId: ad?.treddyDealId });
   };
 
   return (
@@ -83,7 +87,9 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
         <link rel="icon" href="/favicon-196x196.png" />
       </Head>
 
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#155d64] to-[#79bb97]">
+      <Navbar />
+
+      <main className="flex min-h-screen flex-col">
         <div className="container flex flex-col items-center justify-center gap-12">
           <h1 className="mb-12 text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
             Treddy <span className="text-[#79bb97]">Marketplace</span>
@@ -92,20 +98,27 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
           {ad && (
             <div className="flex gap-12">
               <div className="flex flex-col rounded bg-[#f5f5f5]">
-                <div className="relative flex">
+                <div className="relative flex gap-8">
                   <div className="relative flex max-w-xl items-center overflow-hidden rounded-tl rounded-tr">
                     <Gallery selectedImage={selectedImage} images={images} />
                   </div>
 
-                  <div className="flex flex-col rounded-bl rounded-br p-4">
+                  <div className="flex min-w-[200px] flex-col rounded-bl rounded-br p-4 md:min-w-[350px]">
                     <h2 className="text-4xl font-bold">{ad.name}</h2>
-                    <p className="text-2xl text-teal-500">{ad.price}:-</p>
+                    <p className="text-2xl text-primary">{ad.price}:-</p>
 
                     <p className="flex gap-1 py-2 text-xs">
                       <span className="text-gray-500">Säljare:</span>
-                      <span className="text-[#155d64] hover:cursor-pointer hover:text-[#79bb97]">
-                        SimonHylander
-                      </span>
+                      {ad.seller && (
+                        <ProfileDialog
+                          trigger={() => (
+                            <DialogTrigger className="text-[#155d64] hover:cursor-pointer hover:text-[#79bb97]">
+                              {ad.seller?.name}
+                            </DialogTrigger>
+                          )}
+                          user={ad.seller}
+                        />
+                      )}
                     </p>
 
                     <div className="flex gap-4">
@@ -126,38 +139,29 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
 
                     <p className="max-w-md py-2 text-sm">{ad.description}</p>
 
-                    <div className="mb-1 text-xs text-gray-500">
-                      Köp med Treddy
-                    </div>
-                    <div className="text-gray flex gap-4 rounded">
+                    <div className="text-gray flex flex-col gap-2 rounded">
                       <button
                         type="button"
-                        className="flex items-center gap-2 rounded bg-[#155d64] p-2 font-semibold text-white hover:bg-[#79bb97]"
+                        className="flex max-w-[180px] items-center gap-2 rounded bg-[#155d64] p-2 font-semibold text-white hover:bg-teal-700"
+                        onClick={buyAd}
                       >
                         <Image
-                          src="/tr.svg"
+                          src="/tr_white.svg"
                           alt=""
                           className="cursor-pointer rounded-tl rounded-tr text-white"
                           width={32}
                           height={32}
                         />
-                        Säker betalning och frakt
+                        Köp med Treddy
                       </button>
 
-                      <button
-                        type="button"
-                        className="flex items-center gap-2 rounded bg-[#155d64] p-2 font-semibold text-white hover:bg-[#79bb97]"
-                        onClick={buyAsNoShipping}
+                      <a
+                        href="https://treddy.se/hur-funkar-det"
+                        target="_blank"
+                        className="mb-1 text-xs text-gray-500 underline"
                       >
-                        <Image
-                          src="/tr.svg"
-                          alt=""
-                          className="cursor-pointer rounded-tl rounded-tr text-white"
-                          width={32}
-                          height={32}
-                        />
-                        Säker betalning
-                      </button>
+                        Hur fungerar Treddy?
+                      </a>
                     </div>
                   </div>
                 </div>

@@ -1,15 +1,18 @@
-import { env } from "y/env.mjs";
+import { env } from "~/env.mjs";
 
 import base64 from "base-64";
 
 import {
   AccessToken,
-  BuyerRequestPayload,
+  DealOfferPayload,
   CreateDealPayload,
   Deal,
   DealClient,
   OAuth2Client,
   SetShippingTypePayload,
+  DealOfferResponse,
+  SetShippingTypeResponse,
+  ApiError,
 } from "./types";
 
 export const TreddyEnv = {
@@ -77,7 +80,7 @@ export class TreddyApiClient {
 
   deals(): DealClient {
     return {
-      v1_1: () => {
+      v1: () => {
         return {
           list: async (accessToken: string) => {
             return await fetch(`${this.config.base_uri}/deals/v1.1/deals`, {
@@ -88,6 +91,7 @@ export class TreddyApiClient {
               },
             }).then((res) => res.json() as Promise<Deal[]>);
           },
+
           get: async (accessToken: string, id: string) => {
             return await fetch(`${this.config.base_uri}/deals/v1.1/${id}`, {
               method: "GET",
@@ -102,6 +106,7 @@ export class TreddyApiClient {
                 return null;
               });
           },
+
           create: async (
             accessToken: string,
             payload: CreateDealPayload
@@ -122,11 +127,12 @@ export class TreddyApiClient {
                 return null;
               });
           },
+
           setShippingType: async (
             accessToken: string,
             id: string,
             payload: SetShippingTypePayload
-          ): Promise<Deal | null> => {
+          ): Promise<SetShippingTypeResponse | null> => {
             return await fetch(
               `${this.config.base_uri}/deals/v1.1/deals/${id}/shipping`,
               {
@@ -139,7 +145,7 @@ export class TreddyApiClient {
               }
             )
               .then((res) => {
-                return res.json() as Promise<Deal>;
+                return res.json() as Promise<SetShippingTypeResponse>;
               })
               .catch((err) => {
                 console.log(err);
@@ -147,13 +153,13 @@ export class TreddyApiClient {
               });
           },
 
-          buyerRequest: async (
+          offer: async (
             accessToken: string,
             id: string,
-            payload: BuyerRequestPayload
-          ): Promise<Deal | null> => {
+            payload: DealOfferPayload
+          ): Promise<DealOfferResponse | ApiError | null> => {
             return await fetch(
-              `${this.config.base_uri}/deals/v1.1/deals/${id}/buyerRequest`,
+              `${this.config.base_uri}/deals/v1/deals/${id}/offer`,
               {
                 method: "POST",
                 headers: {
@@ -162,14 +168,13 @@ export class TreddyApiClient {
                 },
                 body: JSON.stringify(payload),
               }
-            )
-              .then((res) => {
-                return res.json() as Promise<Deal>;
-              })
-              .catch((err) => {
-                console.log(err);
-                return null;
-              });
+            ).then(async (res) => {
+              if (res.status !== 200) {
+                return Promise.reject((await res.json()) as ApiError);
+              }
+
+              return res.json() as Promise<DealOfferResponse>;
+            });
           },
         };
       },

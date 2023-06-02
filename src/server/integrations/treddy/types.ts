@@ -17,7 +17,23 @@ export type AccessToken = {
 export type PingResponse = string;
 
 export type DealClient = {
-  v1_1: () => {
+  v1: () => {
+    list: (accessToken: string) => Promise<Deal[]>;
+
+    get: (accessToken: string, id: string) => Promise<Deal | null>;
+
+    create: (
+      accessToken: string,
+      deal: CreateDealPayload
+    ) => Promise<Deal | null>;
+
+    offer: (
+      accessToken: string,
+      dealId: string,
+      payload: DealOfferPayload
+    ) => Promise<DealOfferResponse | null>;
+  };
+  /* v1_1: () => {
     list: (accessToken: string) => Promise<Deal[]>;
 
     get: (accessToken: string, id: string) => Promise<Deal | null>;
@@ -33,12 +49,17 @@ export type DealClient = {
       payload: SetShippingTypePayload
     ) => Promise<Deal | null>;
 
-    buyerRequest: (
+    offer: (
       accessToken: string,
       dealId: string,
-      payload: BuyerRequestPayload
+      payload: DealOfferPayload
     ) => Promise<SetShippingTypeResponse | null>;
-  };
+  }; */
+};
+
+export type ApiError = {
+  message: string;
+  status: string;
 };
 
 export type Deal = {
@@ -73,9 +94,24 @@ export type SetShippingTypeResponse = {
   id: string;
   dealId: string;
   type: "Pickup" | "Schenker";
-  packgeType: string;
+  packageType: string;
 };
 
-export type BuyerRequestPayload = {
-  sendEmail: boolean;
+export type DealOfferPayload = {
+  buyer: {
+    name: string;
+    email: string;
+  };
+  communication?: {
+    email?: {
+      send?: boolean;
+      originator: string;
+    };
+  };
+  buyerRedirectUrl: string;
+  sellerRedirectUrl: string;
+};
+
+export type DealOfferResponse = {
+  url: string;
 };

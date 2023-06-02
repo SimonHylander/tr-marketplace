@@ -3,25 +3,35 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Controller } from "react-hook-form";
-import { createAdSchema } from "y/schema/ad";
 
-import { api } from "y/utils/api";
-import { useZodForm } from "y/utils/form";
-import { z } from "zod";
+import { api } from "~/utils/api";
+
+import Navbar from "~/components/navigation/top-navigation";
+import CreateForm from "~/components/ad/create-ad";
+
+import { Plus } from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 
 const Home: NextPage = () => {
-  const utils = api.useContext();
-
-  const { data: ads } = api.ad.list.useQuery(undefined, {
+  const { data: ads, isFetching } = api.ad.list.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
 
-  const [isFormOpen, setFormOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    setFormOpen(false);
-  }, [ads]);
+    if (isFetching && open) {
+      setOpen(false);
+    }
+  }, [isFetching, open]);
 
   return (
     <>
@@ -31,60 +41,67 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon-196x196.png" />
       </Head>
 
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#155d64] to-[#79bb97]">
+      <Navbar />
+
+      <main className="flex min-h-screen flex-col">
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
             Treddy <span className="text-[#79bb97]">Marketplace</span>
           </h1>
 
-          <button
-            type="button"
-            className="rounded border bg-white p-4 text-[#155d64]"
-            onClick={() => setFormOpen(true)}
-          >
-            Skapa annons
-          </button>
+          <Dialog open={open} onOpenChange={(open) => setOpen(open)}>
+            <DialogTrigger
+              className="flex items-center gap-2 rounded border bg-white p-4 text-[#155d64] hover:bg-gray-100"
+              onClick={() => setOpen(true)}
+            >
+              <Plus />
+              Skapa annons
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Skapa annons</DialogTitle>
+                <DialogDescription>Skapa din annons</DialogDescription>
+                <CreateForm />
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
 
-          {isFormOpen && <CreateForm />}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-8">
+            {ads &&
+              ads.map((ad, i) => (
+                <Link
+                  href={`/ads/${ad.id}`}
+                  key={i}
+                  className="flex flex-col rounded bg-white p-2 hover:bg-[#155d64]"
+                >
+                  <div className="relative bg-white">
+                    <Image
+                      src="/no-img.svg"
+                      alt=""
+                      className="rounded-tl rounded-tr"
+                      width={250}
+                      height={250}
+                    />
+                  </div>
 
-          {!isFormOpen && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-8">
-              {ads &&
-                ads.map((ad, i) => (
-                  <Link
-                    href={`/ads/${ad.id}`}
-                    key={i}
-                    className="flex flex-col rounded bg-white p-2 hover:bg-[#155d64]"
-                  >
-                    <div className="relative bg-white">
-                      <Image
-                        src="/no-img.svg"
-                        alt=""
-                        className="rounded-tl rounded-tr"
-                        width={250}
-                        height={250}
-                      />
+                  <div className="flex flex-col gap-2 bg-white p-2">
+                    <h3 className="text-[1.25rem] font-bold">{ad.name}</h3>
 
-                      <div className="absolute bottom-2 right-2">
-                        {ad.treddy_deal_id && (
-                          <Image
-                            src="/favicon-196x196.png"
-                            alt=""
-                            width={32}
-                            height={32}
-                          />
-                        )}
+                    <div className="text-md flex justify-between">
+                      <div className="text-sm">{ad.price}:-</div>
+                      <div className="text-sm">Stockholm</div>
+                    </div>
+
+                    {ad.treddyDealId && (
+                      <div className="flex items-center justify-end gap-2 text-xs">
+                        <Image src="/tr.svg" alt="" width={16} height={16} />
+                        Frakt och trygg betalning
                       </div>
-                    </div>
-
-                    <div className="flex flex-col bg-white p-2">
-                      <h3 className="text-1xl font-bold">{ad.name}</h3>
-                      <div className="text-md">{ad.price}:-</div>
-                    </div>
-                  </Link>
-                ))}
-            </div>
-          )}
+                    )}
+                  </div>
+                </Link>
+              ))}
+          </div>
         </div>
       </main>
     </>
@@ -92,164 +109,3 @@ const Home: NextPage = () => {
 };
 
 export default Home;
-
-function CreateForm() {
-  const utils = api.useContext();
-
-  const { mutate: createAd } = api.ad.create.useMutation({
-    onSuccess: () => {
-      utils.ad.list.invalidate();
-    },
-  });
-
-  const {
-    control,
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    getValues,
-    formState: { errors },
-  } = useZodForm({
-    schema: createAdSchema,
-    defaultValues: {
-      enableTreddy: false,
-    },
-  });
-
-  const onSubmit = (data: z.infer<typeof createAdSchema>) => {
-    createAd(data);
-  };
-
-  function radioValueToBoolean(value: string | null): boolean {
-    if (value === "true") {
-      return true;
-    } else if (value === "false") {
-      return false;
-    }
-
-    return false;
-  }
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      <label htmlFor="name" className="font-bold text-white">
-        Namn
-      </label>
-
-      <input
-        type="text"
-        id="name"
-        {...register("name")}
-        placeholder="Namn"
-        className="rounded p-4"
-      />
-
-      <label htmlFor="description" className="font-bold text-white">
-        Beskriv din vara
-      </label>
-
-      <textarea
-        id="description"
-        {...register("description")}
-        placeholder="Beskrivning.."
-        className="min-h-[10rem] rounded p-4"
-      ></textarea>
-
-      <label htmlFor="price" className="font-bold text-white">
-        Pris
-      </label>
-
-      <input
-        type="text"
-        id="price"
-        {...register("price", {
-          valueAsNumber: true,
-          pattern: {
-            value: /^(0|[1-9]\d*)(\.\d+)?$/,
-          },
-        })}
-        placeholder="Pris"
-        className="rounded p-4"
-      />
-
-      <div className="grid grid-cols-3 border-2 border-[#155d64] bg-white p-4">
-        <div className="col-span-2">
-          <p className="mb-2">
-            <strong>
-              Erbjud säker och enkel betalning och frakt med Treddy
-            </strong>{" "}
-            - helt gratis för Dig som säljare. Köparen betalar fraktkostnaden
-            och en mindre avgift vid genomfört köp.
-          </p>
-
-          <p className="mb-2">
-            Allt för en lyckad affär - frakt, trygg betalning och mycket mer!
-          </p>
-
-          <div className="flex flex-col">
-            <label className="mb-2">
-              <Controller
-                name="enableTreddy"
-                render={(props) => (
-                  <input
-                    type="radio"
-                    name="enableTreddy"
-                    value="true"
-                    onChange={(e) => {
-                      setValue(
-                        "enableTreddy",
-                        radioValueToBoolean(e.target.value)
-                      );
-                    }}
-                    {...props}
-                  />
-                )}
-                control={control}
-              />
-              <strong className="ml-2">Ja tack</strong>, aktivera Treddy för min
-              annons
-            </label>
-
-            <label>
-              <Controller
-                name="enableTreddy"
-                render={(props) => (
-                  <input
-                    type="radio"
-                    name="enableTreddy"
-                    value="false"
-                    onChange={(e) => {
-                      setValue(
-                        "enableTreddy",
-                        radioValueToBoolean(e.target.value)
-                      );
-                    }}
-                    {...props}
-                  />
-                )}
-                control={control}
-              />
-              <strong className="ml-2">Nej tack</strong>, jag aktiverar Treddy i
-              efterhand
-            </label>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center justify-center">
-          <Image src="/logo.svg" alt="Treddy" width={200} height={200} />
-          <a
-            href="https://treddy.se"
-            className="border-b border-gray-500 text-gray-500"
-          >
-            Läs mer om Treddy
-          </a>
-        </div>
-      </div>
-
-      <button type="submit" className="bg-[#373c56] p-4 text-white">
-        Ladda upp annons
-      </button>
-    </form>
-  );
-}

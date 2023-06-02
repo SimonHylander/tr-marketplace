@@ -11,7 +11,7 @@ const config = {
     {
       source: "/",
       destination: "/ads",
-      permanent: true
+      permanent: false
     }
   ],
 

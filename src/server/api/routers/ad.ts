@@ -1,19 +1,17 @@
-import { createAdSchema } from "y/schema/ad";
-import { createTRPCRouter, publicProcedure } from "y/server/api/trpc";
+import { createAdSchema } from "~/schema/ad";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-import { v4 as uuidv4 } from "uuid";
-
-import { env } from "y/env.mjs";
+import { env } from "~/env.mjs";
 
 import {
   TreddyApiClient,
   TreddyApiClientConfiguration,
-} from "y/server/integrations/treddy/treddy";
+} from "~/server/integrations/treddy/treddy";
 
 import { z } from "zod";
 
 export const adRouter = createTRPCRouter({
-  list: publicProcedure.query(async ({ ctx }) => {
+  list: publicProcedure.query(async ({ ctx, input }) => {
     return ctx.prisma.ad.findMany();
   }),
 
@@ -28,6 +26,14 @@ export const adRouter = createTRPCRouter({
         where: {
           id: input.id,
         },
+        include: {
+          seller: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       });
 
       return ad;
@@ -36,14 +42,26 @@ export const adRouter = createTRPCRouter({
   create: publicProcedure
     .input(createAdSchema)
     .mutation(async ({ ctx, input }) => {
-      const seller_id = uuidv4();
+      const seller = await ctx.prisma.user.findFirst({
+        where: {
+          isSeller: true,
+        },
+      });
+
+      if (!seller) {
+        throw new Error("Buyer not found");
+      }
 
       const ad = await ctx.prisma.ad.create({
         data: {
           name: input.name,
           description: input.description,
           price: input.price,
-          seller_id,
+          seller: {
+            connect: {
+              id: seller.id,
+            },
+          },
         },
       });
 
@@ -73,24 +91,42 @@ export const adRouter = createTRPCRouter({
                 id: ad.id,
               },
               data: {
-                treddy_deal_id: createdDeal.id,
-                treddy_seller_url: createdDeal.url,
+                treddyDealId: createdDeal.id,
+                treddySellerUrl: createdDeal.url,
               },
             });
           }
-
-          console.log(createdDeal);
         }
       }
     }),
 
-  buyTreddyNoShipping: publicProcedure
+  buyWithTreddy: publicProcedure
     .input(
       z.object({
         treddyDealId: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const ad = await ctx.prisma.ad.findFirst({
+        where: {
+          treddyDealId: input.treddyDealId,
+        },
+      });
+
+      if (!ad) {
+        throw new Error("Ad not found");
+      }
+
+      const buyer = await ctx.prisma.user.findFirst({
+        where: {
+          isBuyer: true,
+        },
+      });
+
+      if (!buyer) {
+        throw new Error("Buyer not found");
+      }
+
       const config = new TreddyApiClientConfiguration(
         env.TREDDY_CLIENT_ID,
         env.TREDDY_CLIENT_SECRET,
@@ -101,21 +137,34 @@ export const adRouter = createTRPCRouter({
       const accessToken = await treddyClient.oauth2().getAccessToken();
 
       if (accessToken?.access_token) {
-        const shipping = await treddyClient
+        /* const shipping = await treddyClient
           .deals()
           .v1_1()
           .setShippingType(accessToken.access_token, input.treddyDealId, {
             type: "Pickup",
-          });
+          }); */
 
-        console.log(shipping);
+        const buyerRedirectUrl = `${ctx.req.headers.origin}/ads/${ad.id}`;
+        const sellerRedirectUrl = `${ctx.req.headers.origin}/ads/${ad.id}`;
 
-        const buyerRequest = await treddyClient
+        const dealOffer = await treddyClient
           .deals()
-          .v1_1()
-          .buyerRequest(accessToken.access_token, input.treddyDealId, {
-            sendEmail: true,
+          .v1()
+          .offer(accessToken.access_token, input.treddyDealId, {
+            buyer: {
+              name: buyer.name,
+              email: buyer.email,
+            },
+            buyerRedirectUrl,
+            sellerRedirectUrl,
+          })
+          .catch((error) => {
+            console.log(error);
           });
+
+        if (dealOffer) {
+          return dealOffer;
+        }
       }
     }),
 });
