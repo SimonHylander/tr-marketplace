@@ -159,7 +159,7 @@ const CreateForm = () => {
             Läs mer om Treddy
           </a>
         </div>
-      </div>ri
+      </div>
 
       <Button
         type="submit"

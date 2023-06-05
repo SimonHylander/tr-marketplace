@@ -12,7 +12,20 @@ import { z } from "zod";
 
 export const adRouter = createTRPCRouter({
   list: publicProcedure.query(async ({ ctx, input }) => {
-    return ctx.prisma.ad.findMany();
+    return ctx.prisma.ad.findMany({
+      include: {
+        seller: {
+          select: {
+            name: true,
+          },
+        },
+        treddy: {
+          select: {
+            dealId: true,
+          },
+        },
+      },
+    });
   }),
 
   get: publicProcedure
@@ -31,6 +44,11 @@ export const adRouter = createTRPCRouter({
             select: {
               id: true,
               name: true,
+            },
+          },
+          treddy: {
+            select: {
+              dealId: true,
             },
           },
         },
@@ -76,6 +94,8 @@ export const adRouter = createTRPCRouter({
         const accessToken = await treddyClient.oauth2().getAccessToken();
 
         if (accessToken && accessToken.access_token) {
+          const [firstname, lastname] = seller.name.split(" ");
+
           const createdDeal = await treddyClient
             .deals()
             .v1()
@@ -83,16 +103,28 @@ export const adRouter = createTRPCRouter({
               name: ad.name,
               description: ad.description,
               price: ad.price,
+              images: ["https://treddy.se/images/logo.svg"],
+              seller: {
+                firstname: firstname ?? "",
+                lastname: lastname ?? "",
+                email: seller.email,
+              },
+            })
+            .catch((err) => {
+              console.error("catch");
+              console.error(err);
             });
 
           if (createdDeal) {
-            await ctx.prisma.ad.update({
-              where: {
-                id: ad.id,
-              },
+            await ctx.prisma.treddyAd.create({
               data: {
-                treddyDealId: createdDeal.id,
-                treddySellerUrl: createdDeal.url,
+                ad: {
+                  connect: {
+                    id: ad.id,
+                  },
+                },
+                dealId: createdDeal.id,
+                sellerUrl: createdDeal.url,
               },
             });
           }
@@ -109,7 +141,9 @@ export const adRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const ad = await ctx.prisma.ad.findFirst({
         where: {
-          treddyDealId: input.treddyDealId,
+          treddy: {
+            dealId: input.treddyDealId,
+          },
         },
       });
 
@@ -159,7 +193,7 @@ export const adRouter = createTRPCRouter({
             sellerRedirectUrl,
           })
           .catch((error) => {
-            console.log(error);
+            console.error(error);
           });
 
         if (dealOffer) {

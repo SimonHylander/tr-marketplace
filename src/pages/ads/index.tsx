@@ -44,9 +44,11 @@ const Home: NextPage = () => {
       <Navbar />
 
       <main className="flex min-h-screen flex-col">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-          <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-            Treddy <span className="text-[#79bb97]">Marketplace</span>
+        <div className="container flex flex-col items-center justify-center gap-12 py-16 sm:px-4 ">
+          <h1 className="mb-12 text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
+            <Link href="/">
+              Treddy <span className="text-[#79bb97]">Marketplace</span>
+            </Link>
           </h1>
 
           <Dialog open={open} onOpenChange={(open) => setOpen(open)}>
@@ -66,22 +68,20 @@ const Home: NextPage = () => {
             </DialogContent>
           </Dialog>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-8">
+          <div className="grid grid-cols-1 justify-center gap-4 sm:grid-cols-3 md:grid-cols-5 md:gap-8">
             {ads &&
               ads.map((ad, i) => (
-                <Link
-                  href={`/ads/${ad.id}`}
-                  key={i}
-                  className="flex flex-col rounded bg-white p-2 hover:bg-[#155d64]"
-                >
+                <div key={i} className="flex flex-col rounded bg-white p-2">
                   <div className="relative bg-white">
-                    <Image
-                      src="/no-img.svg"
-                      alt=""
-                      className="rounded-tl rounded-tr"
-                      width={250}
-                      height={250}
-                    />
+                    <Link href={`/ads/${ad.id}`}>
+                      <Image
+                        src="/no-img.svg"
+                        alt=""
+                        className="rounded-tl rounded-tr"
+                        width={250}
+                        height={250}
+                      />
+                    </Link>
                   </div>
 
                   <div className="flex flex-col gap-2 bg-white p-2">
@@ -92,14 +92,20 @@ const Home: NextPage = () => {
                       <div className="text-sm">Stockholm</div>
                     </div>
 
-                    {ad.treddyDealId && (
+                    {ad.seller && (
+                      <div className="flex items-center justify-end gap-2 text-xs">
+                        {ad.seller.name}
+                      </div>
+                    )}
+
+                    {ad?.treddy?.dealId && (
                       <div className="flex items-center justify-end gap-2 text-xs">
                         <Image src="/tr.svg" alt="" width={16} height={16} />
                         Frakt och trygg betalning
                       </div>
                     )}
                   </div>
-                </Link>
+                </div>
               ))}
           </div>
         </div>

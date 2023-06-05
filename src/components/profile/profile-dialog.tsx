@@ -64,7 +64,7 @@ const ProfileDialog = ({ trigger, user }: ProfileDialogProps) => {
                         <div className="text-sm">Stockholm</div>
                       </div>
 
-                      {ad.treddyDealId && (
+                      {ad?.treddy?.dealId && (
                         <div className="flex items-center gap-2 text-xs">
                           <Image src="/tr.svg" alt="" width={16} height={16} />
                           Frakt och trygg betalning

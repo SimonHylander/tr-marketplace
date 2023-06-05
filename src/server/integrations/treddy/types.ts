@@ -77,12 +77,12 @@ export type CreateDealPayload = {
   price: number;
   images?: string[];
   seller?: {
-    firstname: string;
-    lastname: string;
-    phone: string;
-    email: string;
-    postcode: string;
-    town: string;
+    firstname?: string;
+    lastname?: string;
+    phone?: string;
+    email?: string;
+    postcode?: string;
+    town?: string;
   };
 };
 
