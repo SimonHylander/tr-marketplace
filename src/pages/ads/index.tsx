@@ -2,7 +2,7 @@ import { type NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Key, useEffect, useState } from "react";
 
 import { api } from "~/utils/api";
 
@@ -19,9 +19,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { UUID } from "crypto";
+import { Button } from "~/components/ui/button";
+
 
 const Home: NextPage = () => {
-  const { data: ads, isFetching } = api.ad.list.useQuery(undefined, {
+  const { data: ads, isFetching, refetch } = api.ad.list.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
 
@@ -32,6 +35,62 @@ const Home: NextPage = () => {
       setOpen(false);
     }
   }, [isFetching, open]);
+
+  const { mutate: deleteAd } = api.ad.delete.useMutation({
+    onSuccess: (data) => {
+      console.log(data);
+
+      refetch();
+    },
+  });
+
+  const { mutate: deleteAllAds } = api.ad.deleteAll.useMutation({
+    onSuccess: (data) => {
+      refetch();
+    },
+  });
+
+  const handleDeleteAd = (id: any) => {
+
+    // if (!confirm("Är du säker på att du vill ta bort annonsen?")) return;
+
+    deleteAd({ id });
+  };
+
+  const handleDeleteAllAds = () => {
+    // if (!confirm("Är du säker på att du vill ta bort alla annonser?")) return;
+
+    deleteAllAds();
+  };
+
+  const { mutate: createAd } = api.ad.create.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
+
+  const quickAddAd = () => {
+    const date = new Date();
+    createAd({
+      name: date.getTime().toString(),
+      description: "Test",
+      price: 100,
+      enableTreddy: true,
+    });
+  };
+
+  const { mutate: buyWithTreddy } = api.ad.buyWithTreddy.useMutation({
+    onSuccess: (data) => {
+      if (data && data.url) {
+        window.open(data.url, "_blank");
+      }
+    },
+  });
+
+  const buyAd = (ad: Ad) => {
+    if (!ad?.treddy?.dealId) return;
+    buyWithTreddy({ treddyDealId: ad?.treddy.dealId });
+  };
 
   return (
     <>
@@ -68,9 +127,16 @@ const Home: NextPage = () => {
             </DialogContent>
           </Dialog>
 
+          <div className="flex flex-col">
+
+            <Button className="text-white font-bold py-2 px-4 rounded bg-red-500 hover:bg-red-700 mb-2.5" onClick={handleDeleteAllAds}>Radera alla annonser</Button>
+            <Button className="flex items-center gap-2 rounded border bg-white p-4 text-[#155d64] hover:bg-gray-100" onClick={quickAddAd}>Blazingly fast annons</Button>
+          </div>
+
+
           <div className="grid grid-cols-1 justify-center gap-4 sm:grid-cols-3 md:grid-cols-5 md:gap-8">
             {ads &&
-              ads.map((ad, i) => (
+              ads.map((ad, i: Key) => (
                 <div key={i} className="flex flex-col rounded bg-white p-2">
                   <div className="relative bg-white">
                     <Link href={`/ads/${ad.id}`}>
@@ -104,6 +170,44 @@ const Home: NextPage = () => {
                         Frakt och trygg betalning
                       </div>
                     )}
+
+
+                    {ad?.treddy?.dealId && (
+                      <div className="text-gray flex flex-col gap-2 rounded">
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 rounded bg-[#155d64] p-2 font-semibold text-white hover:bg-teal-700"
+                          onClick={() => buyAd(ad)}
+                        >
+                          <Image
+                            src="/tr_white.svg"
+                            alt=""
+                            className="cursor-pointer rounded-tl rounded-tr text-white"
+                            width={32}
+                            height={32}
+                          />
+                          Köp med Treddy
+                        </button>
+
+
+
+                      </div>
+                    )}
+
+                    <Button className="bg-red-500 hover:bg-red-700 flex items-center gap-2 rounded p-2 font-semibold text-white" onClick={() => handleDeleteAd(ad.id)}>Ta bort annons</Button>
+
+                    {ad?.treddy?.dealId && (
+                      <a
+                        href="https://treddy.se/hur-funkar-det"
+                        target="_blank"
+                        className="mb-1 text-xs text-gray-500 underline"
+                      >
+                        Hur fungerar Treddy?
+                      </a>
+                    )
+                    }
+
+
                   </div>
                 </div>
               ))}
