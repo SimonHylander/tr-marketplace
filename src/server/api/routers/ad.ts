@@ -219,7 +219,7 @@ export const adRouter = createTRPCRouter({
       })
 
       if (treddyAd) {
-        ctx.prisma.treddyAd.delete({
+        await ctx.prisma.treddyAd.delete({
           where: {
             id: treddyAd.id,
           }
@@ -258,7 +258,7 @@ export const adRouter = createTRPCRouter({
       const treddyAds = await ctx.prisma.treddyAd.findMany();
 
       if (treddyAds) {
-        ctx.prisma.treddyAd.deleteMany().catch((err) => {
+        await ctx.prisma.treddyAd.deleteMany().catch((err) => {
           console.error("Error deleting treddy ads");
           console.error(err);
         })
