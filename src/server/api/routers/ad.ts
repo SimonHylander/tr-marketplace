@@ -49,6 +49,7 @@ export const adRouter = createTRPCRouter({
           treddy: {
             select: {
               dealId: true,
+              sellerUrl: true,
             },
           },
         },
@@ -104,6 +105,7 @@ export const adRouter = createTRPCRouter({
               description: ad.description,
               price: ad.price,
               images: ["https://treddy.se/images/logo.svg"],
+              packageType: "Large",
               seller: {
                 firstname: firstname ?? "",
                 lastname: lastname ?? "",
@@ -208,7 +210,6 @@ export const adRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-
       console.log("Deleting ad");
       console.log(input.id);
 
@@ -216,17 +217,19 @@ export const adRouter = createTRPCRouter({
         where: {
           adId: input.id,
         },
-      })
+      });
 
       if (treddyAd) {
-        await ctx.prisma.treddyAd.delete({
-          where: {
-            id: treddyAd.id,
-          }
-        }).catch((err) => {
-          console.error("Error deleting treddy ad");
-          console.error(err);
-        })
+        await ctx.prisma.treddyAd
+          .delete({
+            where: {
+              id: treddyAd.id,
+            },
+          })
+          .catch((err) => {
+            console.error("Error deleting treddy ad");
+            console.error(err);
+          });
 
         console.log("Treddy ad deleted");
       }
@@ -235,45 +238,44 @@ export const adRouter = createTRPCRouter({
         where: {
           id: input.id,
         },
-      })
+      });
 
       if (!ad) {
         throw new Error("Ad not found");
       }
 
-      ctx.prisma.ad.delete({
-        where: {
-          id: input.id,
-        }
-      }).catch((err) => {
-        console.error("Error deleting ad");
-        console.error(err);
-      })
+      ctx.prisma.ad
+        .delete({
+          where: {
+            id: input.id,
+          },
+        })
+        .catch((err) => {
+          console.error("Error deleting ad");
+          console.error(err);
+        });
     }),
-  deleteAll: publicProcedure
-    .mutation(async ({ ctx }) => {
+  deleteAll: publicProcedure.mutation(async ({ ctx }) => {
+    console.log("Deleting all ads");
 
-      console.log("Deleting all ads");
+    const treddyAds = await ctx.prisma.treddyAd.findMany();
 
-      const treddyAds = await ctx.prisma.treddyAd.findMany();
+    if (treddyAds) {
+      await ctx.prisma.treddyAd.deleteMany().catch((err) => {
+        console.error("Error deleting treddy ads");
+        console.error(err);
+      });
 
-      if (treddyAds) {
-        await ctx.prisma.treddyAd.deleteMany().catch((err) => {
-          console.error("Error deleting treddy ads");
-          console.error(err);
-        })
-
-        console.log("Treddy ads deleted");
-      }
-
-      const ads = await ctx.prisma.ad.findMany();
-
-      if (ads) {
-        ctx.prisma.ad.deleteMany().catch((err) => {
-          console.error("Error deleting ads");
-          console.error(err);
-        })
-      }
+      console.log("Treddy ads deleted");
     }
-    ),
+
+    const ads = await ctx.prisma.ad.findMany();
+
+    if (ads) {
+      ctx.prisma.ad.deleteMany().catch((err) => {
+        console.error("Error deleting ads");
+        console.error(err);
+      });
+    }
+  }),
 });

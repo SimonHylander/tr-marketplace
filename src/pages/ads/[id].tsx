@@ -75,6 +75,11 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
     },
   });
 
+  const completeAsSeller = () => {
+    if (!ad?.treddy?.dealId) return;
+    window.open(ad.treddy.sellerUrl, "_blank");
+  };
+
   const buyAd = () => {
     if (!ad?.treddy?.dealId) return;
     buyWithTreddy({ treddyDealId: ad?.treddy.dealId });
@@ -106,7 +111,7 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
                     <Gallery selectedImage={selectedImage} images={images} />
                   </div>
 
-                  <div className="md:min-w-[350px] flex min-w-[200px] flex-col rounded-bl rounded-br p-4">
+                  <div className="flex min-w-[200px] flex-col rounded-bl rounded-br p-4 md:min-w-[350px]">
                     <h2 className="text-4xl font-bold">{ad.name}</h2>
                     <p className="text-2xl text-primary">{ad.price}:-</p>
 
@@ -115,7 +120,7 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
                       {ad.seller && (
                         <ProfileDialog
                           trigger={() => (
-                            <DialogTrigger className="hover:text-[#79bb97] text-[#155d64] hover:cursor-pointer">
+                            <DialogTrigger className="text-[#155d64] hover:cursor-pointer hover:text-[#79bb97]">
                               {ad.seller?.name}
                             </DialogTrigger>
                           )}
@@ -143,21 +148,38 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
                     <p className="max-w-md py-2 text-sm">{ad.description}</p>
 
                     {ad?.treddy?.dealId && (
-                      <div className="text-gray flex flex-col gap-2 rounded">
-                        <button
-                          type="button"
-                          className="flex max-w-[180px] items-center gap-2 rounded bg-[#155d64] p-2 font-semibold text-white hover:bg-teal-700"
-                          onClick={buyAd}
-                        >
-                          <Image
-                            src="/tr_white.svg"
-                            alt=""
-                            className="cursor-pointer rounded-tl rounded-tr text-white"
-                            width={32}
-                            height={32}
-                          />
-                          Köp med Treddy
-                        </button>
+                      <>
+                        <div className="text-gray mb-2 flex gap-2 rounded">
+                          <button
+                            type="button"
+                            className="flex max-w-[300px] items-center gap-2 rounded bg-[#155d64] p-2 font-semibold text-white hover:bg-teal-700"
+                            onClick={completeAsSeller}
+                          >
+                            <Image
+                              src="/tr_white.svg"
+                              alt=""
+                              className="cursor-pointer rounded-tl rounded-tr text-white"
+                              width={32}
+                              height={32}
+                            />
+                            Färdigställ betallänk
+                          </button>
+
+                          <button
+                            type="button"
+                            className="flex max-w-[300px] items-center gap-2 rounded bg-[#155d64] p-2 font-semibold text-white hover:bg-teal-700"
+                            onClick={buyAd}
+                          >
+                            <Image
+                              src="/tr_white.svg"
+                              alt=""
+                              className="cursor-pointer rounded-tl rounded-tr text-white"
+                              width={32}
+                              height={32}
+                            />
+                            Köp med Treddy
+                          </button>
+                        </div>
 
                         <a
                           href="https://treddy.se/hur-funkar-det"
@@ -166,7 +188,7 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
                         >
                           Hur fungerar Treddy?
                         </a>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>

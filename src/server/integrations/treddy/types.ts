@@ -76,6 +76,7 @@ export type CreateDealPayload = {
   description: string;
   price: number;
   images?: string[];
+  packageType?: string;
   seller?: {
     firstname?: string;
     lastname?: string;

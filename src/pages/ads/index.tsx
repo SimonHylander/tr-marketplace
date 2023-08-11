@@ -19,12 +19,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { UUID } from "crypto";
-import { Button } from "~/components/ui/button";
 
+import { Button } from "~/components/ui/button";
+import type { Ad } from "@prisma/client";
+import { UserValidation } from "~/components/user/UserValidation";
+
+type AdWithTreddy = Ad & {
+  seller: {
+    name: string;
+  } | null;
+  treddy: {
+    dealId: string | null;
+  } | null;
+};
 
 const Home: NextPage = () => {
-  const { data: ads, isFetching, refetch } = api.ad.list.useQuery(undefined, {
+  const {
+    data: ads,
+    isFetching,
+    refetch,
+  } = api.ad.list.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
 
@@ -38,8 +52,6 @@ const Home: NextPage = () => {
 
   const { mutate: deleteAd } = api.ad.delete.useMutation({
     onSuccess: (data) => {
-      console.log(data);
-
       refetch();
     },
   });
@@ -51,7 +63,6 @@ const Home: NextPage = () => {
   });
 
   const handleDeleteAd = (id: any) => {
-
     // if (!confirm("Är du säker på att du vill ta bort annonsen?")) return;
 
     deleteAd({ id });
@@ -81,13 +92,13 @@ const Home: NextPage = () => {
 
   const { mutate: buyWithTreddy } = api.ad.buyWithTreddy.useMutation({
     onSuccess: (data) => {
-      if (data && data.url) {
+      if (data?.url) {
         window.open(data.url, "_blank");
       }
     },
   });
 
-  const buyAd = (ad: Ad) => {
+  const buyAd = (ad: AdWithTreddy) => {
     if (!ad?.treddy?.dealId) return;
     buyWithTreddy({ treddyDealId: ad?.treddy.dealId });
   };
@@ -110,6 +121,8 @@ const Home: NextPage = () => {
             </Link>
           </h1>
 
+          <UserValidation />
+
           <Dialog open={open} onOpenChange={(open) => setOpen(open)}>
             <DialogTrigger
               className="flex items-center gap-2 rounded border bg-white p-4 text-[#155d64] hover:bg-gray-100"
@@ -128,11 +141,19 @@ const Home: NextPage = () => {
           </Dialog>
 
           <div className="flex flex-col">
-
-            <Button className="text-white font-bold py-2 px-4 rounded bg-red-500 hover:bg-red-700 mb-2.5" onClick={handleDeleteAllAds}>Radera alla annonser</Button>
-            <Button className="flex items-center gap-2 rounded border bg-white p-4 text-[#155d64] hover:bg-gray-100" onClick={quickAddAd}>Blazingly fast annons</Button>
+            <Button
+              className="mb-2.5 rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+              onClick={handleDeleteAllAds}
+            >
+              Radera alla annonser
+            </Button>
+            <Button
+              className="flex items-center gap-2 rounded border bg-white p-4 text-[#155d64] hover:bg-gray-100"
+              onClick={quickAddAd}
+            >
+              Blazingly fast annons
+            </Button>
           </div>
-
 
           <div className="grid grid-cols-1 justify-center gap-4 sm:grid-cols-3 md:grid-cols-5 md:gap-8">
             {ads &&
@@ -171,7 +192,6 @@ const Home: NextPage = () => {
                       </div>
                     )}
 
-
                     {ad?.treddy?.dealId && (
                       <div className="text-gray flex flex-col gap-2 rounded">
                         <button
@@ -188,13 +208,15 @@ const Home: NextPage = () => {
                           />
                           Köp med Treddy
                         </button>
-
-
-
                       </div>
                     )}
 
-                    <Button className="bg-red-500 hover:bg-red-700 flex items-center gap-2 rounded p-2 font-semibold text-white" onClick={() => handleDeleteAd(ad.id)}>Ta bort annons</Button>
+                    <Button
+                      className="flex items-center gap-2 rounded bg-red-500 p-2 font-semibold text-white hover:bg-red-700"
+                      onClick={() => handleDeleteAd(ad.id)}
+                    >
+                      Ta bort annons
+                    </Button>
 
                     {ad?.treddy?.dealId && (
                       <a
@@ -204,10 +226,7 @@ const Home: NextPage = () => {
                       >
                         Hur fungerar Treddy?
                       </a>
-                    )
-                    }
-
-
+                    )}
                   </div>
                 </div>
               ))}

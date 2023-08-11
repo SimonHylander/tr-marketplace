@@ -169,7 +169,7 @@ export class TreddyApiClient {
                 body: JSON.stringify(payload),
               }
             ).then(async (res) => {
-              if (res.status !== 200) {
+              if (res.status !== 201) {
                 return Promise.reject((await res.json()) as ApiError);
               }
 
