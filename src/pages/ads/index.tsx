@@ -157,7 +157,9 @@ const Home: NextPage = () => {
 
           <div className="grid grid-cols-1 justify-center gap-4 sm:grid-cols-3 md:grid-cols-5 md:gap-8">
             {ads &&
-              ads.map((ad, i: Key) => (
+              ads.sort((a, b) => {
+                return b.createdAt > a.createdAt
+              }).map((ad, i: Key) => (
                 <div key={i} className="flex flex-col rounded bg-white p-2">
                   <div className="relative bg-white">
                     <Link href={`/ads/${ad.id}`}>
