@@ -20,7 +20,7 @@ const server = z.object({
 const client = z.object(
   /** @satisfies {Record<`NEXT_PUBLIC_${string}`, import('zod').ZodType>} */ (
     {
-      // NEXT_PUBLIC_CLIENTVAR: z.string().min(1),
+      NEXT_PUBLIC_NODE_ENV: z.enum(["development", "test", "production"]),
     }
   ),
 );
@@ -38,7 +38,7 @@ const processEnv = {
   TREDDY_WEBHOOK_SECRET: process.env.TREDDY_WEBHOOK_SECRET,
   TREDDY_ENV: process.env.TREDDY_CLIENT_SECRET,
   NODE_ENV: process.env.NODE_ENV,
-  // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+  NEXT_PUBLIC_NODE_ENV: process.env.NODE_ENV,
 };
 
 // Don't touch the part below

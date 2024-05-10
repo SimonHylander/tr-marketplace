@@ -104,7 +104,7 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
           </h1>
 
           {ad && (
-            <div className="flex gap-12">
+            <div className="flex flex-col gap-12">
               <div className="flex flex-col rounded bg-[#f5f5f5]">
                 <div className="relative flex gap-8">
                   <div className="relative flex max-w-xl items-center overflow-hidden rounded-tl rounded-tr">
@@ -209,6 +209,8 @@ const AdDetails: NextPage<{ id: string }> = ({ id }) => {
                   ))}
                 </div>
               </div>
+
+              <Webhooks />
             </div>
           )}
         </div>
@@ -309,5 +311,44 @@ const Gallery = ({
         />
       </AnimatePresence>
     </>
+  );
+};
+
+const Webhooks = () => {
+  const [webhooks, setWebhooks] = useState([
+    {
+      event: "deal.status",
+    },
+    {
+      event: "signature.status",
+    },
+    {
+      event: "deal.offer",
+    },
+    {
+      event: "deal.offerApproved",
+    },
+    {
+      event: "deal.offerDenied",
+    },
+    {
+      event: "payment.status",
+    },
+  ]);
+
+  return (
+    <div className="flex flex-col rounded bg-[#f5f5f5]">
+      <div className="relative flex gap-8">
+        <div className="flex min-w-[200px] flex-col rounded-bl rounded-br p-4 md:min-w-[350px]">
+          <h2 className="text-4xl font-bold">Webhooks</h2>
+
+          {webhooks.map((webhook, i) => (
+            <div key={i}>
+              <p>{webhook.event}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };

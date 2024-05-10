@@ -23,6 +23,7 @@ import {
 import { Button } from "~/components/ui/button";
 import type { Ad } from "@prisma/client";
 import { UserValidation } from "~/components/user/UserValidation";
+import { env } from "~/env.mjs";
 
 type AdWithTreddy = Ad & {
   seller: {
@@ -40,6 +41,7 @@ const Home: NextPage = () => {
     refetch,
   } = api.ad.list.useQuery(undefined, {
     refetchOnWindowFocus: false,
+    initialData: []
   });
 
   const [open, setOpen] = useState(false);
@@ -69,6 +71,10 @@ const Home: NextPage = () => {
   };
 
   const handleDeleteAllAds = () => {
+    if (env.NEXT_PUBLIC_NODE_ENV !== "development") {
+      return;
+    }
+
     // if (!confirm("Är du säker på att du vill ta bort alla annonser?")) return;
 
     deleteAllAds();
@@ -81,6 +87,10 @@ const Home: NextPage = () => {
   });
 
   const quickAddAd = () => {
+    if (env.NEXT_PUBLIC_NODE_ENV !== "development") {
+      return;
+    }
+
     const date = new Date();
     createAd({
       name: date.getTime().toString(),
@@ -140,20 +150,22 @@ const Home: NextPage = () => {
             </DialogContent>
           </Dialog>
 
-          <div className="flex flex-col">
-            <Button
-              className="mb-2.5 rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-              onClick={handleDeleteAllAds}
-            >
-              Radera alla annonser
-            </Button>
-            <Button
-              className="flex items-center gap-2 rounded border bg-white p-4 text-[#155d64] hover:bg-gray-100"
-              onClick={quickAddAd}
-            >
-              Blazingly fast annons
-            </Button>
-          </div>
+          {env.NEXT_PUBLIC_NODE_ENV === "development" && (
+            <div className="flex flex-col">
+              <Button
+                className="mb-2.5 rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+                onClick={handleDeleteAllAds}
+              >
+                Radera alla annonser
+              </Button>
+              <Button
+                className="flex items-center gap-2 rounded border bg-white p-4 text-[#155d64] hover:bg-gray-100"
+                onClick={quickAddAd}
+              >
+                Blazingly fast annons
+              </Button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 justify-center gap-4 sm:grid-cols-3 md:grid-cols-5 md:gap-8">
             {ads &&

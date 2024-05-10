@@ -105,7 +105,6 @@ export const adRouter = createTRPCRouter({
               description: ad.description,
               price: ad.price,
               images: ["https://treddy.se/images/logo.svg"],
-              packageType: "Large",
               seller: {
                 firstname: firstname ?? "",
                 lastname: lastname ?? "",
@@ -173,13 +172,6 @@ export const adRouter = createTRPCRouter({
       const accessToken = await treddyClient.oauth2().getAccessToken();
 
       if (accessToken?.access_token) {
-        /* const shipping = await treddyClient
-          .deals()
-          .v1_1()
-          .setShippingType(accessToken.access_token, input.treddyDealId, {
-            type: "Pickup",
-          }); */
-
         const buyerRedirectUrl = `${ctx.req.headers.origin}/ads/${ad.id}`;
         const sellerRedirectUrl = `${ctx.req.headers.origin}/ads/${ad.id}`;
 
